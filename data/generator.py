@@ -617,7 +617,9 @@ def generate_labeled_dataset(
     if interval:
         if type(interval[0]) == str:
             theta_lims, phi_lims = get_pov_intervals(interval[0], interval[1])
-        elif type(interval[0]) == tuple:
+        elif type(interval[0]) == list:
+            interval[1][0] = interval[1][0] % 360.0
+            interval[1][1] = interval[1][1] % 360.0
             theta_lims = interval[0]
             phi_lims = interval[1]
     else:
@@ -649,7 +651,7 @@ def generate_labeled_dataset(
         df = pd.read_csv(csv_path, sep=';')
         df['phi'] = df['phi'] % 360.0 # This line must be removed, correct intervals in coordinate generation for dataset
         df['theta'] = df['theta'].clip(0, 180) # When the coordinates are generated correctly, this line will not be necessary.
-        
+
         # Filter by Angles
         if theta_lims:
             df = df[(df['theta'] >= theta_lims[0]) & (df['theta'] <= theta_lims[1])]
@@ -661,7 +663,7 @@ def generate_labeled_dataset(
             else:
                 # Wrap Case (e.g., Front: 340 to 20), We want angles GREATER than 340 OR LESS than 20
                 df = df[(df['phi'] >= p_min) | (df['phi'] <= p_max)]
-        
+
         # Sample Selection, prepared to receive a int or a dictionary as "samples_per_geo"
         count = samples_per_geo.get(geometry)
         print(f"{geometry}: Requested {count} samples after filtering. \n")
