@@ -1,26 +1,3 @@
-# Ignore entire Raw folder and its contents
-Datasets/Raw/
-
-# Ignore Logs inside Datasets
-Datasets/Logs/
-
-# Ignore Python cache
-Datasets/__pycache__/
-__pycache__/
-
-# Ignore Reorganized folder
-Datasets/Reorganized/
-
-# Ignore CNN output folders
-CNN/Logs/
-CNN/SuperLogs/
-CNN/Models/
-
-# Ignore datasets in new structure
-data/cases/
-data/_out/
-CNN/labeled_dataset/
-
 # Ignore temporary OpenRCS files
 coordinates.txt
 facets.txt

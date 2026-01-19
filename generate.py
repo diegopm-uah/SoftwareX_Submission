@@ -3,17 +3,17 @@ from data.generator import fill_stl, change_num_facets, add_stl, remove_stl, cre
 from pathlib import Path
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Procesar argumentos para enviarlos a los distintos programas necesarios.')
+    parser = argparse.ArgumentParser(description='Process arguments to send them to the various necessary programmes.')
     subparsers = parser.add_subparsers(dest='mode', required=True)
     
     # Creación de subparsers
-    parser_add = subparsers.add_parser("addstl", help="Añade un nuevo STL al CSV que se ha metido en data/stl")
-    parser_rm = subparsers.add_parser("rmstl", help="Elimina un cierto STL del CSV")
-    parser_fill = subparsers.add_parser("fillstl", help="Rellena los datos auxiliares en stl.csv")
-    parser_nfacets = subparsers.add_parser("nfacets", help="Cambia el número de facetas en un cierto STL. No cambia el CSV.")
-    parser_case = subparsers.add_parser("case", help="Crea un nuevo caso en param.csv para la generación de imagenes ISAR")
-    parser_rcs = subparsers.add_parser("rcs", help="Crea nuevos samples para un cierto caso")
-    parser_label = subparsers.add_parser("label", help="Crea un dataset con sus correspondientes etiquetas")
+    parser_add = subparsers.add_parser("addstl", help="Adds a new STL to the CSV file that has been placed in data/stl.")
+    parser_rm = subparsers.add_parser("rmstl", help="Removes a certain STL from the CSV")
+    parser_fill = subparsers.add_parser("fillstl", help="Fills in the auxiliary data in stl.csv")
+    parser_nfacets = subparsers.add_parser("nfacets", help="Changes the number of facets in a certain STL. Doesn't change the CSV.")
+    parser_case = subparsers.add_parser("case", help="Creates a new case in param.csv for ISAR image generation (With the corresponding and necessary folders).")
+    parser_rcs = subparsers.add_parser("rcs", help="Creates new samples for a specific case")
+    parser_label = subparsers.add_parser("label", help="Create a dataset with its corresponding labels")
     
     # SUBPARSER ADD_STL
     parser_add.add_argument('geometries', nargs='+', type=str, help='Name of the geometries STL')
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser_case.add_argument('-nf', '--num_freq', type=int, required=True, help="Number of frequencies per image")
     
     # SUBPARSER RCS
-    parser_rcs.add_argument('-g', '--geometries', nargs='+', type=str, help='Lista de archivos .msh y .stl')
+    parser_rcs.add_argument('-g', '--geometries', nargs='+', type=str, help='List of .stl files')
     parser_rcs.add_argument('-c', '--case', type=int, help='Case number to create or use.')
     parser_rcs.add_argument('-n', '--num_samples', type=int, help='Number of samples for each stl.')
     # First couple
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     parser_rcs.add_argument('--phi', nargs=2, type=float, default=None, help='Values of phi interval')
 
     # SUBPARSER LABEL
-    parser_label.add_argument('-g', '--geometries', nargs='+', type=str, help='Lista de archivos .stl')
+    parser_label.add_argument('-g', '--geometries', nargs='+', type=str, help='List of .stl files')
     parser_label.add_argument('-n', '--num_samples', nargs='+', type= int, help='Number of samples for each stl (1 "int" = same number for all geometries, + "int" = different number for each geometry).')
     parser_label.add_argument('-c', '--case', type=int, help='Case number to get data from.')
     parser_label.add_argument('--data', type=str, required=True,choices=['rcs_complex', 'ISAR', 'rcs_amp_ph', 'rcs_amp', 'rcs_ph'], help='Type of data to be generated.')
@@ -80,10 +80,10 @@ if __name__ == '__main__':
                     central_freq=args.central_freq,
                     num_angle=args.num_angle, num_freq=args.num_freq)
     elif args.mode == 'rcs' or args.mode == 'label':
-        # Comprobación incial: o bien se han dado pov y cw, o bien theta y phi, o bien ninguno
+        # Initial check: either pov and cw have been given, or theta and phi, or neither.
         if not any([args.pov, args.cw, args.theta, args.phi]):
             interval = None
-        # Se han declarado pov y cw
+        # pov y cw have been declared
         elif args.pov and args.cw:
             if args.theta or args.phi:
                 raise Exception("Theta and Phi cannot be declared simultanously with POV and CW")
@@ -111,39 +111,5 @@ if __name__ == '__main__':
                                      interval = interval
                                     )
 
-# --------------- 10000 facets Figthers ----------------
-
-# Boeing_EA-18G_Growler_10000 Dassault_Rafale_10000 Eurofighter_Typhoon_20000 F-4_Phantom_II_10000
-# Grumman_EA-6B_Prowler_10000 Grumman_F-14_Tomcat_20000 JF-17_Thunder_10000 KAI_T-50_Golden_Eagle_10000 
-# Lockheed_F-16_Fighting_Falcon_10000 Lockheed_F-22_Raptor_10000 Mikoyan_MiG-23_10000 Mikoyan_MiG-31_10000 
-# Mikoyan_MiG-35_10000 Northrop_F-5_10000 Northrop_F-20_Tigershark_10000 Northrop_T-38_Talon_10000 
-# Rockwell_B-1_Lancer_20000 Shenyang_J-15_10000 Sukhoi_SU-25_10000 Sukhoi_SU-34_10000 Sukhoi_SU-57_10000 
-# TAI_Hurjet_10000 TAI_Kaan_10000 Yakovlev_Yak-130_10000
-
-# One line format:
-# Boeing_EA-18G_Growler_10000 Dassault_Rafale_10000 Eurofighter_Typhoon_20000 F-4_Phantom_II_10000 Grumman_EA-6B_Prowler_10000 Grumman_F-14_Tomcat_20000 JF-17_Thunder_10000 KAI_T-50_Golden_Eagle_10000 Lockheed_F-16_Fighting_Falcon_10000 Lockheed_F-22_Raptor_10000 Mikoyan_MiG-23_10000 Mikoyan_MiG-31_10000 Mikoyan_MiG-35_10000 Northrop_F-5_10000 Northrop_F-20_Tigershark_10000 Northrop_T-38_Talon_10000 Rockwell_B-1_Lancer_20000 Shenyang_J-15_10000 Sukhoi_SU-25_10000 Sukhoi_SU-34_10000 Sukhoi_SU-57_10000 TAI_Hurjet_10000 TAI_Kaan_10000 Yakovlev_Yak-130_10000
-
-# --------------- 20000 facets Small Geometries  ----------------
-
-# Vapor_55_UAV_20000 Scaneagle_UAV_20000 Drone_X8_Octocopter_20000 Agriculteur_UAV_20000 
-# Glider_20000 Mehmet_Prototype_UAV_20000 IAI_Harop_20000 Helicopter_Drone_UAV_20000
-
-# One line format:
-# Vapor_55_UAV_20000 Scaneagle_UAV_20000 Drone_X8_Octocopter_20000 Agriculteur_UAV_20000 Glider_20000 Mehmet_Prototype_UAV_20000 IAI_Harop_20000 Helicopter_Drone_UAV_20000
-
-# ----------------------------- 10000 facets Big Geometries -----------------------------
-
-# Antonov_An-72_10000 Antonov_An-225_10000 Supersonic_Jet_10000 Sphinx_UAV_10000 Northrop_YB-35_10000 
-# Northrop_Grumman_RQ-4_Global_Hawk_10000 Lockheed_U-2_10000 Lockheed_P-3_Orion_10000 Kamov_Ka-52_10000 
-# HAL_Prachand_10000 Grumman_F7F_Tigercat_10000 Fairchild_A-10_Warthog_10000 Embraer_Phenom_100_10000 
-# Embraer_C-390_Millennium_10000 Consolidated_PBY_Catalina_10000 Concorde_10000 Boeing_787_10000 
-# Bell_V-280_Valor_10000 Bell-Boeing_V-22_Osprey_10000 Bell_AH-1Z_Viper_10000 Bayraktar_TB2_10000 
-# Bayraktar_Akinci_10000 Avenger-716_UAV_10000
-
-# One line format:
-# Antonov_An-72_10000 Antonov_An-225_10000 Supersonic_Jet_20000 Sphinx_UAV_10000 Northrop_YB-35_10000 Northrop_Grumman_RQ-4_Global_Hawk_10000 Lockheed_U-2_10000 Lockheed_P-3_Orion_10000 Kamov_Ka-52_10000 HAL_Prachand_20000 Grumman_F7F_Tigercat_10000 Fairchild_A-10_Warthog_10000 Embraer_Phenom_100_20000 Embraer_C-390_Millennium_10000 Consolidated_PBY_Catalina_10000 Boeing_787_10000 Bell_V-280_Valor_10000 Bell-Boeing_V-22_Osprey_10000 Bell_AH-1Z_Viper_20000 Bayraktar_TB2_10000 Bayraktar_Akinci_10000 Avenger-716_UAV_10000
-
+# nohup python generate.py rcs -g  -n  -c  --pov  --cw 
 # python generate.py label -g  -n  -c  --data  --SNR  --pov  --cw
-# nohup python generate.py calculate_rcs -g  -n  -c  --pov  --cw 
-
-# python generate.py label -g Vapor_55_UAV_20000 Scaneagle_UAV_20000 Drone_X8_Octocopter_20000 Agriculteur_UAV_20000 Glider_20000 Mehmet_Prototype_UAV_20000 IAI_Harop_20000 Helicopter_Drone_UAV_20000 -n 2000 -c 1 --data rcs_amp_phase --pov back --cw 56 --SNR 0

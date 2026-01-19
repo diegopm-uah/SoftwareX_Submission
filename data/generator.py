@@ -146,19 +146,15 @@ def remove_stl(stl_name: str):
     
     df.drop(index=stl_name, axis='index', inplace=True)
     df.reset_index().to_csv(Path("data/stl.csv"), sep=';', header=True, index=False)
-    
-# Comprueba que exista coherencia entre la carpeta de STLs y el CSV de STLs
-def sanity_check():
-    pass
 
-# Crea un nuevo caso en el CSV param, creando las nuevas carpetas de manera conveniente
+# Create a new case in the CSV param, creating the new folders as appropriate.
 def create_case(case: str,
                 delta_angle: float, central_freq: float, delta_freq: float,
                 num_angle: int, num_freq: int):
     
-    assert case in ('theta', 'phi'), "La variable case solo puede ser 'theta' o 'phi'"
+    assert case in ('theta', 'phi'), "The case variable can only be 'theta' or 'phi'."
     
-    # Creación del nuevo CSV cases
+    # Creation of the new CSV cases
     df_cases = pd.read_csv(Path("data/param.csv"), index_col=0, sep=";")
     new_df = pd.concat([df_cases,
                         pd.DataFrame([[case, delta_angle, central_freq, delta_freq, num_angle, num_freq]],
@@ -167,7 +163,7 @@ def create_case(case: str,
     last_index = new_df.last_valid_index()
     new_df.to_csv(Path("data/param.csv"), index=True, sep=';')
     
-    # Creación de las carpetas correspondientes
+    # Creation of the corresponding folders
     df_stl = pd.read_csv(Path("data/stl.csv"), sep=";")
     geom_names = df_stl['name']
     path_case = Path("data/cases/") / str(last_index)
@@ -212,7 +208,7 @@ def cartesian_to_spherical(x, y, z):
         phi += 2 * np.pi  # Ensure phi is in (0, 2pi)
     return theta, phi
             
-def generate_spherical_coordinates_file(n, angle, width, m,  filename, cone_width=None, pov=None):
+def generate_spherical_coordinates_file(n, angle, width, m,  filename, cone_width=None, pov=None, theta_limits=None, phi_limits=None):
     """Generates a text file with n samples of random spherical coordinates and additional variations.
 
     Each sample consists of a random unit direction in spherical coordinates. Additional directions 
@@ -226,6 +222,8 @@ def generate_spherical_coordinates_file(n, angle, width, m,  filename, cone_widt
         filename (str, optional): Output file name.
         pov (str): Which part of the object will be being looked.
         cone_width (float): Width of the cone of view when pov is present.
+        theta_limits (tuple): Optional (min, max) in degrees for theta.
+        phi_limits (tuple): Optional (min, max) in degrees for phi.
     """
 
     def pov_angles(pov, cw):
@@ -238,21 +236,28 @@ def generate_spherical_coordinates_file(n, angle, width, m,  filename, cone_widt
             general = cw * (np.random.rand() * 2 - 1)
             general_2 = cw * (np.random.rand() * 2 - 1)
             return (general + povs[pov][0]) * np.pi/180, (general_2 + povs[pov][1]) * np.pi/180
+    
+    def sample_bounded_angles(t_lim, p_lim):
+        # Samples uniformly between min and max degrees, converts to radians
+        t = np.random.uniform(np.radians(t_lim[0]), np.radians(t_lim[1]))
+        p = np.random.uniform(np.radians(p_lim[0]), np.radians(p_lim[1]))
+        return t, p
 
     width = np.radians(width)  # Convert width from degrees to radians
     ret_values = list()
     
-    
     with open(filename, "w") as f:
         for _ in range(n):
-            if pov:  # Positive x axis
+            if theta_limits is not None and phi_limits is not None:
+                theta, phi = sample_bounded_angles(theta_limits, phi_limits)
+            elif pov:  # Positive x axis
                 theta, phi = pov_angles(pov, cone_width)
             else:
-                # 1. Generar variables aleatorias uniformes
+                # 1. Generate uniform random variables
                 u = np.random.rand()
                 v = np.random.rand()
 
-                # 2. Calcular ángulos
+                # 2. Calculate angles
                 theta = 2 * np.pi * u
                 phi = np.arccos(1 - 2 * v)
                 
@@ -321,7 +326,7 @@ def get_pov_intervals(pov, cw):
     
     return theta_lims, phi_lims
 
-# Function to handle angle wrapping (de momento la dejo sin implementar pero serviría por si no queremos incluir numeros negativos en los intervalos)
+# Function to handle angle wrapping (for now, I'm leaving it unimplemented, but it would be useful if we don't want to include negative numbers in the intervals).
 def filter_angle(df, column, limit_min, limit_max):
     """
     Filter a DataFrame based on angle values within a specified range.
@@ -346,13 +351,13 @@ def filter_angle(df, column, limit_min, limit_max):
         # Wrap-around case: e.g., 350 to 10, we want angles > 350 OR angles < 10
         return df[(df[column] >= limit_min) | (df[column] <= limit_max)]
 
-# Función principal. Crea los nuevos .npy que guardan la RCS de diversos casos para diversas geometrias
+# Main function. Creates new .npy files that store the RCS of various cases for various geometries.
 def calculate_rcs(geometries: list[str], 
                   num_samples: int, 
                   case: int,
                   interval: tuple[str, float] | tuple[tuple, tuple] | None=None
                   ): 
-    # Obtención de los parámetros de case
+    # Obtaining case parameters
     df_cases = pd.read_csv(Path("data/param.csv"), sep=";", index_col=0)
     sweep_angle, delta_angle, central_f, delta_f, num_angle, num_f = df_cases.loc[case,
         ['sweep_angle','delta_angle','central_f','delta_f','num_angle','num_f']
@@ -377,28 +382,29 @@ def calculate_rcs(geometries: list[str],
         
         if interval != None and type(interval[0]) == str:
             _ = generate_spherical_coordinates_file(num_samples, sweep_angle, delta_angle, num_angle,
-                                                directions_path, interval[1], pov=interval[0])
-        elif interval != None and type(interval[0]) == tuple:
-            print("Caso no implementado: se han pasado dos intervalos theta y phi")
+                                                directions_path, cone_width=interval[1], pov=interval[0], theta_limits=None, phi_limits=None)
+        elif interval != None and type(interval[0]) == list:
+            _ = generate_spherical_coordinates_file(num_samples, sweep_angle, delta_angle, num_angle,
+                                                directions_path, cone_width=None, pov=None, theta_limits=interval[0], phi_limits=interval[1])
         else:
             _ = generate_spherical_coordinates_file(num_samples, sweep_angle, delta_angle, num_angle,
-                                                directions_path, cone_width=None, pov=None)
+                                                directions_path, cone_width=None, pov=None, theta_limits=None, phi_limits=None)
         
         to_degrees(Path("data/_out/directions.txt"), Path("data/_out/directions_degrees.txt"))
-        
+
         stl_converter(file_path=stl_path)
-        coordinatesData = extractCoordinatesData(0) # El parámetro es la resistividad (PEC=0)
+        coordinatesData = extractCoordinatesData(0) # The parameter is resistivity. (PEC=0)
         
-        ########## Creación de ficheros #############
-        # Estas líneas son por si la carpeta y el csv de la geometria no existen aun, 
-        # casuistíca que hay que revisar, ya que el create case solo crea carpetas para las geometrías que ya existen, 
-        # si se añade una geometría nueva no hay forma de crear la carpeta sin este paso:
+        ########## Creating files #############
+        # These lines are for cases where the folder and the geometry CSV file do not yet exist, 
+        # a situation that needs to be reviewed, since the create case only creates folders for geometries that already exist. 
+        # If a new geometry is added, there is no way to create the folder without this step:
         folder_path = Path("data/cases") / str(case) / geometry / "rcs"
         os.makedirs(folder_path, exist_ok=True)
         if not os.path.isfile(Path("data/cases") / str(case) / geometry / "rcs.csv"):
             pd.DataFrame({'theta': [], 'phi': [], 'file': []}).to_csv(Path("data/cases") / str(case) / geometry / "rcs.csv", index=False, sep=';')
         
-        # list_lines es la lista de i-ésimas líneas de los ficheros
+        # list_lines is the list of i-th lines of the files
         rcs_df = pd.read_csv(Path("data/cases") / str(case) / geometry / "rcs.csv", sep=";")
         data_list = list()
         max_file = rcs_df['file'].max() if len(rcs_df['file']) > 0 else 0     
@@ -421,9 +427,9 @@ def calculate_rcs(geometries: list[str],
                     params_entrys = [
                         stl_path,
                         freq,
-                        0, 0, # correlation y std
-                        1, # 1 si campo eléctrico, 2 si magnético
-                        0, # Material, para PEC a cero
+                        0, 0, # correlation and std
+                        1, # 1 if electric field, 2 if magnetic field
+                        0, # Material, for PEC at zero
                         first_angle[1], last_angle[1], step[1] if step[1] > 0 else 0, # first phi, last phi, step phi
                         first_angle[0], last_angle[0], step[0] if step[0] > 0 else 0, # first theta, last theta, step theta
                     ]
@@ -432,10 +438,10 @@ def calculate_rcs(geometries: list[str],
 
                 max_file += 1
             
-                # Creación del nuevo .txt
+                # Creation of the new .txt file
                 path_new_file = folder_path / (str(max_file) + ".txt")
                 
-                # Actualizamos rcs.csv
+                # We update rcs.csv
                 data_list.append({'theta': (first_angle[0] + last_angle[0]) / 2,
                                     'phi': (first_angle[1] + last_angle[1]) / 2,
                                     'file': max_file})
@@ -510,7 +516,7 @@ def npy_fill(case: int):
                 lineas = [l for l in lineas if l.strip()] 
                 n_rows = len(lineas)
                 
-                # -------Esto puede ser util en un futuro si los txt no son cuadrados, ahora mismo no hace falta----------
+                # -------This may be useful in the future if the txt files are not square, but right now it is not necessary.----------
                 
                 # # 2. Calculate Columns (Angles) based on the first line
                 # # Your format ends with a semicolon, so we split by ';' and remove the last empty element
@@ -641,8 +647,8 @@ def generate_labeled_dataset(
             continue
 
         df = pd.read_csv(csv_path, sep=';')
-        df['phi'] = df['phi'] % 360.0 # Esta línea hay que quitarla, corregir intervalos en generacion de coordenadas para dataset
-        df['theta'] = df['theta'].clip(0, 180) # Cuando se generen correctamente las coordenadas no hará falta esta línea
+        df['phi'] = df['phi'] % 360.0 # This line must be removed, correct intervals in coordinate generation for dataset
+        df['theta'] = df['theta'].clip(0, 180) # When the coordinates are generated correctly, this line will not be necessary.
         
         # Filter by Angles
         if theta_lims:
@@ -768,36 +774,3 @@ def generate_labeled_dataset(
 
 if __name__ == '__main__':
     pass
-    # create_case('phi', 3.44, 10e9, 600000000.0,64, 64)
-
-    # calculate_rcs(['Agriculteur_UAV'], num_samples=5, case=0, interval=('front', 30))
-
-    # npy_fill(case=0)
-    
-    # parser = argparse.ArgumentParser(description='Procesar argumentos para enviarlos a los distintos programas necesarios.')
-
-    # # Parámetros generales: 
-
-    # parser.add_argument('-n', '--num_samples', type=int, help='Number of samples for each stl.')
-    # parser.add_argument('-g', '--geometries', nargs='+', type=str, help='Lista de archivos .msh y .stl')
-    # parser.add_argument('-c', '--case', type=int, help='Case number to create or use.')
-    
-    # # Este grupo de parametros se le pasa a create_case:
-
-    # parser.add_argument('-f', '--freq_central', type=float, default=1e10, help='Valor de la frecuencia central del barrido.')
-    # parser.add_argument('--wf', type=float, default=3e8, help='Valor de la semianchura del barrido en frecuencias')
-    # parser.add_argument('--nf', type=int, default=16, help='Cantidad de frecuencias dentro del barrido.')
-    # parser.add_argument('-w', '--angular_width', type=float, default=1.72, help='Valor de la semianchura del barrido angular en grados.')
-    # parser.add_argument('--nd', type=int, default=16, help='Cantidad de ángulos contenidos en el ancho del barrido.')
-    # parser.add_argument('-d', '--scan_angle', type=str, default="theta", choices=["theta", "phi"], help='Elegir en qué ángulo se realizan los barridos.')
-    
-    
-    # parser.add_argument('--pov', type=str, default=None, choices=["front", "left_side", "right_side", "back", "top", "bottom"], help='Which part of the object will be being looked')
-    # parser.add_argument('--cw', type=float, default=None, help='Value of the semi-width established for the pov cone in degrees')
-    
-    # # parser.add_argument('--snr', type=float, default=None, help='Value of the signal-to-noise ratio, expressed in dB, used to add noise to the dataset.')
-    # # parser.add_argument('--nr', nargs='+', type=int, default=0, help='Number of samples per geometrie to make up the reorganization folder')
-
-    # args = parser.parse_args()
-
-    # case_folder_path = Path(f"data/cases/{args.case}")
