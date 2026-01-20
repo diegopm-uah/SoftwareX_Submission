@@ -689,7 +689,7 @@ def generate_labeled_dataset(
             if not os.path.exists(src_file):
                 continue
                 
-            # A. Load Clean Data (Matrix of Real/Imag pairs)
+            # Load Clean Data (Matrix of Real/Imag pairs)
             # Shape: (Freqs, Angles, 2)
             matriz = np.load(src_file)
             
@@ -699,7 +699,7 @@ def generate_labeled_dataset(
             # print("Loaded matrix shape: ", matriz_complex.shape, matriz.shape)
             # print("Sample theta, phi: ", row['theta'], row['phi'], " | File ID: ", file_id, "from geometry ", geometry)   
             # print(matriz_complex)
-            # B. Inject Noise (Random SNR if range provided, fixed otherwise)
+            # Inject Noise (Random SNR if range provided, fixed otherwise)
             current_snr = SNR
             if isinstance(SNR, (tuple, list)):
                 current_snr = np.random.uniform(SNR[0], SNR[1])
@@ -711,7 +711,7 @@ def generate_labeled_dataset(
                 noise = np.random.normal(0, desv, matriz_complex.shape) / np.sqrt(2) + 1j * np.random.normal(0, desv, matriz_complex.shape) / np.sqrt(2)               
                 matriz_complex = matriz_complex + noise
 
-            # C. Generate Requested Format
+            # Generate Requested Format
             save_name = f"{len(manifest_rows) + 1}_{geometry}_{file_id}" # Base filename
             
             if data_type == 'rcs_complex':
@@ -756,7 +756,7 @@ def generate_labeled_dataset(
                 SNR_Value = round(current_snr, 2)
             else:
                 SNR_Value = "Clean"
-            # D. Add to Manifest
+            # Add to Manifest
             manifest_rows.append({
                 "file_path": Path("labeled_dataset/data/") / os.path.basename(final_path),
                 "label_idx": class_to_idx[geometry],
@@ -766,7 +766,6 @@ def generate_labeled_dataset(
                 "snr": SNR_Value
             })
 
-    # --- 4. SAVE MANIFEST ---
     manifest_df = pd.DataFrame(manifest_rows)
     manifest_csv_path = os.path.join(target_path, "manifest.csv")
     manifest_df.to_csv(manifest_csv_path, index=False, sep=';')
