@@ -118,8 +118,8 @@ def add_stl(stl_name: str, category: str):
 
     df = pd.read_csv(Path("data/stl.csv"), sep=";")
     
-    assert os.path.isfile(Path('data/stl/' + stl_name + '.stl')), f'El STL a añadir {stl_name} no existe'
-    assert len(df[df['name']==stl_name]) == 0, f'El STL {stl_name} ya se ha introducido'
+    assert os.path.isfile(Path('data/stl/' + stl_name + '.stl')), f'The STL to be added {stl_name} does not exist.'
+    assert len(df[df['name']==stl_name]) == 0, f'The STL {stl_name} has already been introduced.'
     
     final_df = pd.concat([df, pd.DataFrame({'name':[stl_name], 'category':[category]})])
     final_df.to_csv(Path("data/stl.csv"), sep=';', header=True, index=False)
@@ -142,7 +142,7 @@ def remove_stl(stl_name: str):
 
     df = pd.read_csv(Path("data/stl.csv"), sep=";", index_col='name')
     
-    assert len(df.filter(items=[stl_name], axis='index')) == 1, f'El STL {stl_name} no existe en el CSV'
+    assert len(df.filter(items=[stl_name], axis='index')) == 1, f'The STL {stl_name} does not exist in the CSV.'
     
     df.drop(index=stl_name, axis='index', inplace=True)
     df.reset_index().to_csv(Path("data/stl.csv"), sep=';', header=True, index=False)
