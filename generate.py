@@ -1,6 +1,10 @@
 import argparse
 from data.generator import fill_stl, change_num_facets, add_stl, remove_stl, create_case, calculate_rcs, generate_labeled_dataset, multiple_reorganization, npy_fill
 from pathlib import Path
+import subprocess, sys
+
+# THIS IS AN EXAMPLE ROUTE. THIS MUST BE SUBSTITUTED WITH THE PYTHON THAT USES BLENDER.
+BLENDER_PYTHON_PATH = r'C:\Program Files\Blender Foundation\Blender 4.2\4.2\python\bin\python.exe'
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process arguments to send them to the various necessary programmes.')
@@ -73,6 +77,13 @@ if __name__ == '__main__':
     elif args.mode == 'fillstl':
         fill_stl()
     elif args.mode == 'nfacets':
+        try:
+            import bpy
+            import bmesh
+        except ImportError:
+            args = [BLENDER_PYTHON_PATH] + sys.argv
+            subprocess.run(args)
+            
         change_num_facets(args.geometries, args.num_facets)
     elif args.mode == 'case':
         create_case(args.sweep,
