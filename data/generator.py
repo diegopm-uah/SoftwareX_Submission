@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 import os
+import sys
 import math
 import stl
 from datetime import datetime
@@ -12,6 +13,8 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 import shutil
+
+GENERATE_FOLDER = Path(sys.argv[0]).resolve().parent
 
 seed = 53
 seed = datetime.now().microsecond
@@ -29,19 +32,19 @@ def fill_stl():
         ValueError: If the CSV file has an unexpected format or missing required columns.
     """
 
-    df = pd.read_csv(Path("data/stl.csv"), sep=";", index_col="name")
+    df = pd.read_csv(GENERATE_FOLDER / "data/stl.csv", sep=";", index_col="name")
     
     df_with_nan = df[pd.isna(df[['facets','bbx','bby','bbz']]).any(axis=1)]
     
     for name in df_with_nan.index:
-        mesh = stl.mesh.Mesh.from_file(Path("data/stl/" + name + ".stl"))
+        mesh = stl.mesh.Mesh.from_file(GENERATE_FOLDER / ("data/stl/" + name + ".stl"))
         
         df.loc[name, 'facets'] = len(mesh.vectors)
         df.loc[name, 'bbx'] = mesh.x.max() - mesh.x.min()
         df.loc[name, 'bby'] = mesh.y.max() - mesh.y.min()
         df.loc[name, 'bbz'] = mesh.z.max() - mesh.z.min()
 
-    df.reset_index().to_csv(Path("data/stl.csv"), sep=';', header=True, index=False)
+    df.reset_index().to_csv(GENERATE_FOLDER / "data/stl.csv", sep=';', header=True, index=False)
     
 def change_num_facets(geometries: list[str], target_faces: int):
     """
@@ -66,7 +69,7 @@ def change_num_facets(geometries: list[str], target_faces: int):
     import bpy
     import bmesh
 
-    geom_folder_path = Path("data/stl")
+    geom_folder_path = GENERATE_FOLDER / "data/stl/"
 
     for geometry in geometries:
 
@@ -116,13 +119,13 @@ def add_stl(stl_name: str, category: str):
         AssertionError: If the STL name already exists in the 'data/stl.csv' file.
     """
 
-    df = pd.read_csv(Path("data/stl.csv"), sep=";")
+    df = pd.read_csv(GENERATE_FOLDER / "data/stl.csv", sep=";")
     
-    assert os.path.isfile(Path('data/stl/' + stl_name + '.stl')), f'The STL to be added {stl_name} does not exist.'
+    assert os.path.isfile(GENERATE_FOLDER / ('data/stl/' + stl_name + '.stl')), f'The STL to be added {stl_name} does not exist.'
     assert len(df[df['name']==stl_name]) == 0, f'The STL {stl_name} has already been introduced.'
     
     final_df = pd.concat([df, pd.DataFrame({'name':[stl_name], 'category':[category]})])
-    final_df.to_csv(Path("data/stl.csv"), sep=';', header=True, index=False)
+    final_df.to_csv(GENERATE_FOLDER / "data/stl.csv", sep=';', header=True, index=False)
 
 def remove_stl(stl_name: str):
     """
@@ -140,12 +143,12 @@ def remove_stl(stl_name: str):
         and use a semicolon (';') as the delimiter.
     """
 
-    df = pd.read_csv(Path("data/stl.csv"), sep=";", index_col='name')
+    df = pd.read_csv(GENERATE_FOLDER / "data/stl.csv", sep=";", index_col='name')
     
     assert len(df.filter(items=[stl_name], axis='index')) == 1, f'The STL {stl_name} does not exist in the CSV.'
     
     df.drop(index=stl_name, axis='index', inplace=True)
-    df.reset_index().to_csv(Path("data/stl.csv"), sep=';', header=True, index=False)
+    df.reset_index().to_csv(GENERATE_FOLDER / "data/stl.csv", sep=';', header=True, index=False)
 
 # Create a new case in the CSV param, creating the new folders as appropriate.
 def create_case(case: str,
@@ -155,18 +158,18 @@ def create_case(case: str,
     assert case in ('theta', 'phi'), "The case variable can only be 'theta' or 'phi'."
     
     # Creation of the new CSV cases
-    df_cases = pd.read_csv(Path("data/param.csv"), index_col=0, sep=";")
+    df_cases = pd.read_csv(GENERATE_FOLDER / "data/param.csv", index_col=0, sep=";")
     new_df = pd.concat([df_cases,
                         pd.DataFrame([[case, delta_angle, central_freq, delta_freq, num_angle, num_freq]],
                                      columns=df_cases.columns)],
                        ignore_index=True)
     last_index = new_df.last_valid_index()
-    new_df.to_csv(Path("data/param.csv"), index=True, sep=';')
+    new_df.to_csv(GENERATE_FOLDER / "data/param.csv", index=True, sep=';')
     
     # Creation of the corresponding folders
-    df_stl = pd.read_csv(Path("data/stl.csv"), sep=";")
+    df_stl = pd.read_csv(GENERATE_FOLDER / "data/stl.csv", sep=";")
     geom_names = df_stl['name']
-    path_case = Path("data/cases/") / str(last_index)
+    path_case = GENERATE_FOLDER / "data/cases/" / str(last_index)
     os.mkdir(path_case)
     for name in geom_names:
         os.mkdir(path_case / name)
@@ -184,7 +187,7 @@ def generate_frequency_file(central_freq, freq_width, m):
         m (int): Number of frequencies to generate.
         filename (str, optional): Output file name.
     """
-    filename = Path("data/_out/frequencies.txt")
+    filename = GENERATE_FOLDER / "data/_out/frequencies.txt"
     with open(filename, "w") as f:
         freq_values = np.linspace(central_freq - freq_width, central_freq + freq_width, m)
         for _, freq in enumerate(freq_values):
@@ -358,13 +361,13 @@ def calculate_rcs(geometries: list[str],
                   interval: tuple[str, float] | tuple[tuple, tuple] | None=None
                   ): 
     # Obtaining case parameters
-    df_cases = pd.read_csv(Path("data/param.csv"), sep=";", index_col=0)
+    df_cases = pd.read_csv(GENERATE_FOLDER / "data/param.csv", sep=";", index_col=0)
     sweep_angle, delta_angle, central_f, delta_f, num_angle, num_f = df_cases.loc[case,
         ['sweep_angle','delta_angle','central_f','delta_f','num_angle','num_f']
         ]
     
     generate_frequency_file(central_f, delta_f, num_f)
-    directions_path = Path("data/_out/directions.txt")
+    directions_path = GENERATE_FOLDER / "data/_out/directions.txt"
 
     print("Generation has started...\n")
     
@@ -378,7 +381,7 @@ def calculate_rcs(geometries: list[str],
 
         tic = time.time()
 
-        stl_path = Path("data/stl") / (geometry + ".stl")
+        stl_path = GENERATE_FOLDER / "data/stl" / (geometry + ".stl")
         
         if interval != None and type(interval[0]) == str:
             _ = generate_spherical_coordinates_file(num_samples, sweep_angle, delta_angle, num_angle,
@@ -390,7 +393,7 @@ def calculate_rcs(geometries: list[str],
             _ = generate_spherical_coordinates_file(num_samples, sweep_angle, delta_angle, num_angle,
                                                 directions_path, cone_width=None, pov=None, theta_limits=None, phi_limits=None)
         
-        to_degrees(Path("data/_out/directions.txt"), Path("data/_out/directions_degrees.txt"))
+        to_degrees(GENERATE_FOLDER / "data/_out/directions.txt", GENERATE_FOLDER / "data/_out/directions_degrees.txt")
 
         stl_converter(file_path=stl_path)
         coordinatesData = extractCoordinatesData(0) # The parameter is resistivity. (PEC=0)
@@ -399,21 +402,21 @@ def calculate_rcs(geometries: list[str],
         # These lines are for cases where the folder and the geometry CSV file do not yet exist, 
         # a situation that needs to be reviewed, since the create case only creates folders for geometries that already exist. 
         # If a new geometry is added, there is no way to create the folder without this step:
-        folder_path = Path("data/cases") / str(case) / geometry / "rcs"
+        folder_path = GENERATE_FOLDER / "data/cases" / str(case) / geometry / "rcs"
         os.makedirs(folder_path, exist_ok=True)
-        if not os.path.isfile(Path("data/cases") / str(case) / geometry / "rcs.csv"):
-            pd.DataFrame({'theta': [], 'phi': [], 'file': []}).to_csv(Path("data/cases") / str(case) / geometry / "rcs.csv", index=False, sep=';')
+        if not os.path.isfile(GENERATE_FOLDER / "data/cases" / str(case) / geometry / "rcs.csv"):
+            pd.DataFrame({'theta': [], 'phi': [], 'file': []}).to_csv(GENERATE_FOLDER / "data/cases" / str(case) / geometry / "rcs.csv", index=False, sep=';')
         
         # list_lines is the list of i-th lines of the files
-        rcs_df = pd.read_csv(Path("data/cases") / str(case) / geometry / "rcs.csv", sep=";")
+        rcs_df = pd.read_csv(GENERATE_FOLDER / "data/cases" / str(case) / geometry / "rcs.csv", sep=";")
         data_list = list()
         max_file = rcs_df['file'].max() if len(rcs_df['file']) > 0 else 0     
         
         try:
-            with open(Path("data/_out/frequencies.txt"), "r") as freq_file:
+            with open(GENERATE_FOLDER / "data/_out/frequencies.txt", "r") as freq_file:
                 freq_list = list(map(float, freq_file.readlines()))
             
-            with open(Path("data/_out/directions_degrees.txt"), "r") as dir_file:
+            with open(GENERATE_FOLDER / "data/_out/directions_degrees.txt", "r") as dir_file:
                 dir_array_temp = dir_file.readlines()
                 dir_array = [dir_array_temp[i*num_angle:(i+1)*num_angle] for i in range(len(dir_array_temp)//num_angle)]
                 
@@ -457,11 +460,11 @@ def calculate_rcs(geometries: list[str],
         toc_1 = time.time()
         print(f"OpenRCS generation of {num_samples} samples of the {geometry} completed in {toc_1-tic} seconds, {(toc_1-tic)/60} minutes.\n")
         
-        os.remove(Path("coordinates.txt"))
-        os.remove(Path("facets.txt"))
+        os.remove("coordinates.txt")
+        os.remove("facets.txt")
         
         rcs_df = pd.concat([rcs_df, pd.DataFrame(data_list)], ignore_index=True)
-        rcs_df.to_csv(Path("data/cases") / str(case) / geometry / "rcs.csv", sep=";", header=True, index=False)
+        rcs_df.to_csv(GENERATE_FOLDER / "data/cases" / str(case) / geometry / "rcs.csv", sep=";", header=True, index=False)
 
     print("\nGeneration of samples completed for all geometries.\n")
     
@@ -473,7 +476,7 @@ def npy_fill(case: int):
     Args:
         case (int): Needed for the root directory (e.g., 'data/cases/0').
     """
-    base_path = os.path.join("data", "cases", str(case))
+    base_path = GENERATE_FOLDER / "data" / "cases" / str(case)
     # 1. Find all geometry folders
     geometry_folders = [f for f in glob.glob(os.path.join(base_path, "*")) if os.path.isdir(f)]
     
@@ -610,7 +613,7 @@ def generate_labeled_dataset(
     script_dir = os.path.dirname(os.path.abspath(__file__))
     target_path = os.path.join(script_dir, "..", "CNN", "labeled_dataset") # Target folder for the dataset (to be overwritten)
 
-    base_path = os.path.join("data", "cases", str(case))
+    base_path = GENERATE_FOLDER / "data" / "cases" / str(case)
     if os.path.exists(target_path):
         shutil.rmtree(target_path)
 
@@ -758,7 +761,7 @@ def generate_labeled_dataset(
                 SNR_Value = "Clean"
             # Add to Manifest
             manifest_rows.append({
-                "file_path": Path("labeled_dataset/data/") / os.path.basename(final_path),
+                "file_path": GENERATE_FOLDER / "labeled_dataset/data/" / os.path.basename(final_path),
                 "label_idx": class_to_idx[geometry],
                 "label_name": geometry,
                 "theta": row['theta'],
@@ -770,8 +773,8 @@ def generate_labeled_dataset(
     manifest_csv_path = os.path.join(target_path, "manifest.csv")
     manifest_df.to_csv(manifest_csv_path, index=False, sep=';')
     
-    print(f"Done. Created {len(manifest_df)} samples in '{target_path}'.\n")
-    print(f"Manifest saved to: {manifest_csv_path}\n")
+    print(f"Done. Created {len(manifest_df)} samples in '{Path(target_path).resolve()}'.\n")
+    print(f"Manifest saved to: {Path(manifest_csv_path).resolve()}\n")
 
 if __name__ == '__main__':
     pass
