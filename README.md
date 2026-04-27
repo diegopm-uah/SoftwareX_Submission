@@ -21,10 +21,43 @@ The tool manages the entire workflow:
 
 ## Requirements
 
-The software requires **Python 3.10+** and **Blender 4.2** (for the subcommand `fillstl`).
+The software requires **Python 3.10+** and **Blender 4.2** (optional, only for the subcommand `fillstl`).
 
-### Python Dependencies
-Install the required libraries using the provided `requirements.txt`:
+## Installation
+
+### Clone the repository
+
+To clone the repository to your local machine:
+
+```bash
+git clone https://github.com/diegopm-uah/SoftwareX_Submission
+cd SoftwareX_Submission
+```
+
+### Create a virtual environment (optional)
+
+Although this is an optional step, creating a virtual environment is strongly recommended to avoid cross-dependency issues. 
+
+The instructions below explain how to create a virtual environment in Python. However, there are several package managers, such as uv or conda, that are equally suitable for this task.
+
+To create a virtual environment called ``.venv``:
+
+```bash
+python -m venv .venv
+```
+
+To enter into the virtual environment, if you are in Windows PowerShell:
+```bash
+.venv\Scripts\activate
+```
+
+In Linux or MacOS:
+```bash
+source .venv/Scripts/activate
+```
+
+### Install Python Packages
+Install the required packages using the provided `requirements.txt`:
 
 ```bash
 pip install -r requirements.txt
@@ -35,19 +68,6 @@ pip install -r requirements.txt
 * `numpy-stl` (tested on 3.2.0)
 * `pandas` (tested on 2.3.3)
 * `matplotlib` (tested on 3.10.3)
-
-## Configuration Arguments
-
-| Argument | Description | Example |
-| :--- | :--- | :--- |
-| `--geometries` | List of folder names containing STL files | `Tank` `Dassault_Rafale` |
-| `--case` | ID for radar parameters (frequency/resolution) | `--case 0` |
-| `--samples` | Number of samples to generate per geometry | `--samples 50` |
-| `--theta` / `--phi` | Angular limits for generation [min max] | `--theta 40 140` |
-| `--pov` | Point of View for angular constraint | `front` |
-| `--cw` | Cone width (degrees) around the POV | `50` |
-| `--snr` | Signal-to-Noise Ratio (dB) for noise injection | `15` |
-| `--data` | Output format | `ISAR` or `RCS` (Real & Im, Amp & Ph formats)|
 
 
 ## Usage & Examples
@@ -122,7 +142,7 @@ These parameters are listed on `data/rcs.csv`, and must be queried to know the i
 The subcommand `rcs` generates RCS matrices for a Tank geometry with a specific sweep (created with `case` command). For instance, given the previous configuration (listed in `data/rcs.csv` with the identifier $0$), RCS simulations are needed for the `new_geometry.stl` and the `other_geometry.stl`. To generate 300 samples with $\theta\in(50º,130º)$ and $\phi\in(-40º,40)$:
 
 ```bash
-python generate.py rcs --geometries new_geometry other_geometry --case 0 --samples 300 --theta 50 130 --phi -40 40
+python generate.py rcs --geometries new_geometry other_geometry --case 0 --num_samples 300 --theta 50 130 --phi -40 40
 ```
 
 Alternatively, instead of indicating the angular margins explicitly, if the front, bottom, left, etc. parts are the sections of interest, they can be explicitly written with the `--pov` argument. The following choices are available:
@@ -139,7 +159,7 @@ Alternatively, instead of indicating the angular margins explicitly, if the fron
 Besides, a cone width argument (`--cw`)must indicate the amplitude of the cone on degrees, which will be equal for theta and phi. For instance, the previous example is centered on the front side and the cone width is of 40º in theta and phi. Thus, an equivalent command would be:
 
 ```bash
-python generate.py rcs --geometries new_geometry other_geometry --case 0 --samples 300 --pov front --cw 40
+python generate.py rcs --geometries new_geometry other_geometry --case 0 --num_samples 300 --pov front --cw 40
 ```
 
 ### Create Labeled Dataset (ISAR)
@@ -149,17 +169,17 @@ This command processes the raw RCS data created with the subcommand `rcs` into I
 | :--- | :--- | :--- | :--- |
 | `--geometries` | List of folder names containing STL files | `Tank` `Dassault_Rafale` |
 | `--case` | ID for radar parameters (frequency/resolution) | `--case 0` |
-| `--samples` | Number of samples to generate per geometry | `--samples 50` |
+| `--num_samples` | Number of samples to generate per geometry | `--samples 50` |
 | `--theta` / `--phi` | Angular limits for generation [min max] | `--theta 40 140` |
 | `--pov` | Point of View for angular constraint | `front` |
 | `--cw` | Cone width (degrees) around the POV | `50` |
-| `--snr` | Signal-to-Noise Ratio (dB) for noise injection | `15` |
+| `--SNR` | Signal-to-Noise Ratio (dB) for noise injection | `15` |
 | `--data` | Output format | `ISAR`, `rcs_complex` (Real & Im) , `rcs_amp` (Only amplitude), `rcs_ph` (only phase), `rcs_amp_ph` (amplitude and phase)|
 
 
 To generate randomly 3 previous raw RCS data into ISAR images with noise injection (in this case, 15 dB SNR, but noise is optional) and create the final labeled dataset:
 ```bash
-python generate.py label --geometries new_geometry other_geometry --case 0 --samples 3 --pov front --cw 40 --snr 15 --data ISAR
+python generate.py label --geometries new_geometry other_geometry --case 0 --num_samples 3 --pov front --cw 40 --SNR 15 --data ISAR
 ```
 
 Thus, 3 cases will be found in the `CNN/labeleld_dataset/data` relative path in the format requested. The whole set of cases are listed on `CNN/labeleld_dataset/manifest.csv`.
