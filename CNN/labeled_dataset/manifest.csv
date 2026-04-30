@@ -1,2 +1,5 @@
-file_path;label_idx;label_name;theta;phi;snr
-labeled_dataset\data\1_tank_1.png;0;tank;95.1390246379828;354.8071594313842;15.0
+file_path;label_idx;label_name;theta;phi;snr;data_type;case
+C:\Users\Diego\Desktop\SoftwareX_Submission\labeled_dataset\data\1_tank_1.png;0;tank;95.1390246379828;354.8071594313842;0.0;ISAR;0
+C:\Users\Diego\Desktop\SoftwareX_Submission\labeled_dataset\data\2_tank_2.png;0;tank;128.33627310073942;0.6323236204679673;0.0;ISAR;0
+C:\Users\Diego\Desktop\SoftwareX_Submission\labeled_dataset\data\3_tank_3.png;0;tank;117.66469641569172;13.931331392043043;0.0;ISAR;0
+C:\Users\Diego\Desktop\SoftwareX_Submission\labeled_dataset\data\4_tank_4.png;0;tank;74.17341117743061;12.760574387769374;0.0;ISAR;0

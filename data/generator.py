@@ -766,7 +766,9 @@ def generate_labeled_dataset(
                 "label_name": geometry,
                 "theta": row['theta'],
                 "phi": row['phi'],
-                "snr": SNR_Value
+                "snr": SNR_Value,
+                "data_type": data_type,
+                "case": case
             })
 
     manifest_df = pd.DataFrame(manifest_rows)
