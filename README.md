@@ -79,13 +79,13 @@ The software is controlled via the Command Line Interface (CLI) `generate.py`. S
 There are new geometries that would be introduced on the program (for instance, `new_geometry.stl` and `other_geometry.stl`). Firstly, they must be copied on the `data/stl` folder. Next, the subcommand `addstl` provide the logic to refresh the internal datasets.
 
 ```bash
-python generate.py addstl new_geometry other_geometry --category UAV
+python generate.py stl addstl new_geometry other_geometry --category UAV
 ```
 
 In this case, two new geometries were added with the category `UAV`. Please note that this argument is optional, and can be simplified as `-c`. That is, this command is equivalent to the previous one:
 
 ```bash
-python generate.py addstl new_geometry other_geometry -c UAV
+python generate.py stl addstl new_geometry other_geometry -c UAV
 ```
 
 Besides, should be noted that the number of geometries that can be introduced at the same time is not limited, but the whole set must correspond to the same category.
@@ -95,7 +95,7 @@ Besides, should be noted that the number of geometries that can be introduced at
 As a counterpart of the previous subcommand, `rmstl` allows the user to remove a STL geometry that is currently in the program. Let's assume that `new_geometry.stl` and `other_geometry.stl` should be removed:
 
 ```bash
-python generate.py rmstl new_geometry other_geometry
+python generate.py stl rmstl new_geometry other_geometry
 ```
 
 Once executed, the user cannot use the next commands with removed geometries, and they are not at the `UAV` anymore. Nonetheless, they are still on the `data/stl` folder and removing them is responsibility of the user.
@@ -105,15 +105,15 @@ Once executed, the user cannot use the next commands with removed geometries, an
 After adding several STLs via command `addstl` or changing a STL file from the `data/stl` folder, this command must be executed for sanity check:
 
 ```bash
-python generate.py fillstl
+python generate.py stl fillstl
 ```
 
 ### Remesh a STL
 
 To remesh an STL with a different number of facets, Blender 4.2+ must be installed with the Python API. The path of python must be indicated on the `BLENDER_PYTHON_PATH` variable in `generate.py`. Two equivalent examples of remeshing to 10K facets are:
 ```bash
-python generate.py nfacets new_geometry other_geometry --num_facets 10000
-python generate.py nfacets new_geometry other_geometry -n 10000
+python generate.py stl nfacets new_geometry other_geometry --num_facets 10000
+python generate.py stl nfacets new_geometry other_geometry -n 10000
 ```
 
 ### Create a simulation scenario
@@ -132,7 +132,7 @@ For traceability reasons, the parameters of every simulation must be stored befo
 For instance, to create ISAR images of resolution $64x32$ (being the X axis the cross-range and the Y axis the frequency-range) centered in $10 GHz$ with $(\Delta\theta)=0.1$ and $(\Delta f)=0.05$, the following command must be executed:
 
 ```bash
-python generate.py case theta --delta_angle 0.1 --delta_freq 0.05 --central_freq 10e9 --num_angle 64 --num_freq 32
+python generate.py sim case theta --delta_angle 0.1 --delta_freq 0.05 --central_freq 10e9 --num_angle 64 --num_freq 32
 ```
 
 These parameters are listed on `data/rcs.csv`, and must be queried to know the identifier.
@@ -142,7 +142,7 @@ These parameters are listed on `data/rcs.csv`, and must be queried to know the i
 The subcommand `rcs` generates RCS matrices for a Tank geometry with a specific sweep (created with `case` command). For instance, given the previous configuration (listed in `data/rcs.csv` with the identifier $0$), RCS simulations are needed for the `new_geometry.stl` and the `other_geometry.stl`. To generate 300 samples with $\theta\in(50º,130º)$ and $\phi\in(-40º,40)$:
 
 ```bash
-python generate.py rcs --geometries new_geometry other_geometry --case 0 --num_samples 300 --theta 50 130 --phi -40 40
+python generate.py sim rcs --geometries new_geometry other_geometry --case 0 --num_samples 300 --theta 50 130 --phi -40 40
 ```
 
 Alternatively, instead of indicating the angular margins explicitly, if the front, bottom, left, etc. parts are the sections of interest, they can be explicitly written with the `--pov` argument. The following choices are available:
@@ -159,7 +159,7 @@ Alternatively, instead of indicating the angular margins explicitly, if the fron
 Besides, a cone width argument (`--cw`)must indicate the amplitude of the cone on degrees, which will be equal for theta and phi. For instance, the previous example is centered on the front side and the cone width is of 40º in theta and phi. Thus, an equivalent command would be:
 
 ```bash
-python generate.py rcs --geometries new_geometry other_geometry --case 0 --num_samples 300 --pov front --cw 40
+python generate.py sim rcs --geometries new_geometry other_geometry --case 0 --num_samples 300 --pov front --cw 40
 ```
 
 ### Create Labeled Dataset (ISAR)
@@ -183,5 +183,7 @@ python generate.py label --geometries new_geometry other_geometry --case 0 --num
 ```
 
 Thus, 3 cases will be found in the `CNN/labeleld_dataset/data` relative path in the format requested. The whole set of cases are listed on `CNN/labeleld_dataset/manifest.csv`.
+
+## Appendix: Workflow
 
 <img width="746" height="1682" alt="Workflow_SoftwareX" src="https://github.com/user-attachments/assets/fc1ced23-ea6a-4e06-9917-a18790ea4879" />
