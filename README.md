@@ -167,7 +167,7 @@ This command processes the raw RCS data created with the subcommand `rcs` into I
 
 | Argument | Short Option | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `--geometries` | List of folder names containing STL files | `Tank` `Dassault_Rafale` |
+| `--geometries` | List of folder names containing STL files | `tank` `Dassault_Rafale` |
 | `--case` | ID for radar parameters (frequency/resolution) | `--case 0` |
 | `--num_samples` | Number of samples to generate per geometry | `--samples 50` |
 | `--theta` / `--phi` | Angular limits for generation [min max] | `--theta 40 140` |
