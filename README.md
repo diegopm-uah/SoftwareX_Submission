@@ -21,7 +21,7 @@ The tool manages the entire workflow:
 
 ## Requirements
 
-The software requires **Python 3.10+** and **Blender 4.2** (optional, only for the subcommand `fillstl`).
+The software requires **Python 3.11+** and **Blender 4.2** (optional, only for the subcommand `fillstl`).
 
 ## Installation
 
