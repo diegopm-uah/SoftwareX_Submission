@@ -76,36 +76,36 @@ The software is controlled via the Command Line Interface (CLI) `generate.py`. S
 
 ### Add new STL geometry
 
-There are new geometries that would be introduced on the program (for instance, `new_geometry.stl` and `other_geometry.stl`). Firstly, they must be copied on the `data/stl` folder. Next, the subcommand `addstl` provide the logic to refresh the internal datasets.
+There are new geometries that would be introduced on the program (for instance, `new_geometry.stl` and `other_geometry.stl`). Firstly, they must be copied on the `data/stl` folder. Next, the subcommand `add` provide the logic to refresh the internal datasets.
 
 ```bash
-python generate.py stl addstl new_geometry other_geometry --category UAV
+python generate.py stl add new_geometry other_geometry --category UAV
 ```
 
 In this case, two new geometries were added with the category `UAV`. Please note that this argument is optional, and can be simplified as `-c`. That is, this command is equivalent to the previous one:
 
 ```bash
-python generate.py stl addstl new_geometry other_geometry -c UAV
+python generate.py stl add new_geometry other_geometry -c UAV
 ```
 
 Besides, should be noted that the number of geometries that can be introduced at the same time is not limited, but the whole set must correspond to the same category.
 
 ### Remove STL geometry of the program
 
-As a counterpart of the previous subcommand, `rmstl` allows the user to remove a STL geometry that is currently in the program. Let's assume that `new_geometry.stl` and `other_geometry.stl` should be removed:
+As a counterpart of the previous subcommand, `rm` allows the user to remove a STL geometry that is currently in the program. Let's assume that `new_geometry.stl` and `other_geometry.stl` should be removed:
 
 ```bash
-python generate.py stl rmstl new_geometry other_geometry
+python generate.py stl rm new_geometry other_geometry
 ```
 
 Once executed, the user cannot use the next commands with removed geometries, and they are not at the `UAV` anymore. Nonetheless, they are still on the `data/stl` folder and removing them is responsibility of the user.
 
 ### Automatic fill of STL data
 
-After adding several STLs via command `addstl` or changing a STL file from the `data/stl` folder, this command must be executed for sanity check:
+After adding several STLs via command `add` or changing a STL file from the `data/stl` folder, this command must be executed for sanity check:
 
 ```bash
-python generate.py stl fillstl
+python generate.py stl fill
 ```
 
 ### Remesh a STL
